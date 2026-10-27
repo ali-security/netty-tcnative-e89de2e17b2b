@@ -44,15 +44,19 @@ WORKDIR $SOURCE_DIR
 
 RUN curl -q -k https://cmake.org/files/v$CMAKE_VERSION_BASE/cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz --output cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz && tar zxf cmake-$CMAKE_VERSION-Linux-x86_64.tar.gz && mv cmake-$CMAKE_VERSION-Linux-x86_64 /opt/ && echo 'PATH=/opt/cmake-$CMAKE_VERSION-Linux-x86_64/bin:$PATH' >> ~/.bashrc
 
-RUN wget -q --no-check-certificate https://github.com/ninja-build/ninja/releases/download/v$NINJA_VERSION/ninja-linux.zip && unzip ninja-linux.zip && mkdir -p /opt/ninja-$NINJA_VERSION/bin && mv ninja /opt/ninja-$NINJA_VERSION/bin && echo 'PATH=/opt/ninja-$NINJA_VERSION/bin:$PATH' >> ~/.bashrc
+# wheezy's gnutls-based wget can no longer negotiate TLS with github.com, the openssl-based curl still can.
+RUN curl -sSLk -o ninja-linux.zip https://github.com/ninja-build/ninja/releases/download/v$NINJA_VERSION/ninja-linux.zip && unzip ninja-linux.zip && mkdir -p /opt/ninja-$NINJA_VERSION/bin && mv ninja /opt/ninja-$NINJA_VERSION/bin && echo 'PATH=/opt/ninja-$NINJA_VERSION/bin:$PATH' >> ~/.bashrc
 
-RUN wget -q http://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && tar zxf go$GO_VERSION.linux-amd64.tar.gz && mv go /opt/ && echo 'PATH=/opt/go/bin:$PATH' >> ~/.bashrc && echo 'export GOROOT=/opt/go/' >> ~/.bashrc
+# storage.googleapis.com/golang now answers 403, Go archives are served from dl.google.com.
+RUN curl -sSLk -o go$GO_VERSION.linux-amd64.tar.gz https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz && tar zxf go$GO_VERSION.linux-amd64.tar.gz && mv go /opt/ && echo 'PATH=/opt/go/bin:$PATH' >> ~/.bashrc && echo 'export GOROOT=/opt/go/' >> ~/.bashrc
 
-RUN wget -q --no-check-certificate https://github.com/netty/netty-tcnative/releases/download/gcc-precompile/gcc-$GCC_VERSION.tar.gz && tar zxf gcc-$GCC_VERSION.tar.gz && mv gcc-$GCC_VERSION /opt/ && echo 'PATH=/opt/gcc-$GCC_VERSION/bin:$PATH' >> ~/.bashrc && echo 'export CC=/opt/gcc-$GCC_VERSION/bin/gcc' >> ~/.bashrc && echo 'export CXX=/opt/gcc-$GCC_VERSION/bin/g++' >> ~/.bashrc
+RUN curl -sSLk -o gcc-$GCC_VERSION.tar.gz https://github.com/netty/netty-tcnative/releases/download/gcc-precompile/gcc-$GCC_VERSION.tar.gz && tar zxf gcc-$GCC_VERSION.tar.gz && mv gcc-$GCC_VERSION /opt/ && echo 'PATH=/opt/gcc-$GCC_VERSION/bin:$PATH' >> ~/.bashrc && echo 'export CC=/opt/gcc-$GCC_VERSION/bin/gcc' >> ~/.bashrc && echo 'export CXX=/opt/gcc-$GCC_VERSION/bin/g++' >> ~/.bashrc
 
 RUN rm -rf $SOURCE_DIR
 
 # Downloading and installing SDKMAN!
+# wheezy's CA bundle no longer validates the SDKMAN! endpoints, so let curl (also used by the installer) skip the check.
+RUN echo insecure >> ~/.curlrc
 RUN curl -s "https://get.sdkman.io" | bash
 
 ARG java_version="8.0.302-zulu"

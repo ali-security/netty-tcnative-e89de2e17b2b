@@ -37,7 +37,8 @@ RUN mkdir $SOURCE_DIR
 WORKDIR $SOURCE_DIR
 
 RUN wget -q https://github.com/ninja-build/ninja/releases/download/v$NINJA_VERSION/ninja-linux.zip && unzip ninja-linux.zip && mkdir -p /opt/ninja-$NINJA_VERSION/bin && mv ninja /opt/ninja-$NINJA_VERSION/bin && echo 'PATH=/opt/ninja-$NINJA_VERSION/bin:$PATH' >> ~/.bashrc
-RUN wget -q https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz && tar zxf go$GO_VERSION.linux-amd64.tar.gz && mv go /opt/ && echo 'PATH=/opt/go/bin:$PATH' >> ~/.bashrc && echo 'export GOROOT=/opt/go/' >> ~/.bashrc
+# storage.googleapis.com/golang now answers 403, Go archives are served from dl.google.com.
+RUN wget -q https://dl.google.com/go/go$GO_VERSION.linux-amd64.tar.gz && tar zxf go$GO_VERSION.linux-amd64.tar.gz && mv go /opt/ && echo 'PATH=/opt/go/bin:$PATH' >> ~/.bashrc && echo 'export GOROOT=/opt/go/' >> ~/.bashrc
 RUN curl -s https://cmake.org/files/v$CMAKE_VERSION_BASE/cmake-$CMAKE_VERSION-linux-x86_64.tar.gz --output cmake-$CMAKE_VERSION-linux-x86_64.tar.gz && tar zvxf cmake-$CMAKE_VERSION-linux-x86_64.tar.gz && mv cmake-$CMAKE_VERSION-linux-x86_64 /opt/ && echo 'PATH=/opt/cmake-$CMAKE_VERSION-linux-x86_64/bin:$PATH' >> ~/.bashrc
 
 RUN yum install -y centos-release-scl
@@ -55,7 +56,13 @@ RUN rm -rf $SOURCE_DIR
 RUN curl -L https://install.perlbrew.pl | bash
 RUN echo 'source ~/perl5/perlbrew/etc/bashrc' >> ~/.bashrc
 
-RUN /root/perl5/perlbrew/bin/perlbrew install --thread --switch perl-5.16.3
+# 'perlbrew install' (current perlbrew/patchperl) aborts on this image, so build the same threaded perl-5.16.3
+# from the CPAN tarball into the perlbrew perls directory directly.
+RUN curl -sSL https://cpan.metacpan.org/authors/id/R/RJ/RJBS/perl-5.16.3.tar.bz2 | tar xj -C /tmp && \
+    cd /tmp/perl-5.16.3 && \
+    ./Configure -des -Dusethreads -Dprefix=/root/perl5/perlbrew/perls/perl-5.16.3 && \
+    make -j$(nproc) && make install && \
+    cd / && rm -rf /tmp/perl-5.16.3
 RUN ln -sf /root/perl5/perlbrew/perls/perl-5.16.3/bin/perl /usr/bin/perl
 
 # Downloading and installing SDKMAN!

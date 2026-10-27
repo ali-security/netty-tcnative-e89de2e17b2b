@@ -8,13 +8,7 @@ name: "CodeQL"
 permissions: read-all
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [main]
-  schedule:
-    - cron: '0 19 * * 5'
+  workflow_dispatch:
 env:
   MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryhandler.count=5 -Dmaven.wagon.httpconnectionManager.ttlSeconds=240
 
